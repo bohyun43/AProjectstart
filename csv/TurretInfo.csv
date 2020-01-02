@@ -1,0 +1,3 @@
+index,Name,Damage,Delay,BP
+0,NoPair0,1,1,Blueprint'/Game/Blueprints/Character/Tower/BP_NoPair_6.BP_NoPair_6'
+1,NoPair1,2,2,Blueprint'/Game/Blueprints/Character/Tower/BP_NoPair_7.BP_NoPair_7'
