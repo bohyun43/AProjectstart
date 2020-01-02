@@ -1,0 +1,55 @@
+
+참고 URL : https://wiki.unrealengine.com/Multi-Threading:_How_to_Create_Threads_in_UE4
+
+MyTestPrimeNumberWorker 예제 참고.
+
+
+
+스레드 관리
+-----------------------------------------------------------------------
+- FPlatformProcess::Sleep(seconds);		Sleep을 통한 CPU 자원 배분.
+
+
+스레드에서 하지 말아야 할 것
+-----------------------------------------------------------------------
+- 다른 스레드에서 UObject를 수정, 생성 또는 삭제하지 마십시오!
+- 모든 데이터를 준비하거나 모든 계산을 수행 할 수 있지만 게임 스레드에서만 실제로 UObjects/AActors 를 생성/수정/삭제 해야합니다.
+- 게임 스레드 외부에서 TimerManager를 사용하려고 하지 마십시오.
+- 디버그 라인/포인트 등을 그리지 마십시오. DrawDebugLine (등등 ...)과 같이 충돌 할 가능성이 있습니다.
+- 타이머를 사용하고, 제거하고, 수정하려면 변수를 사용하십시오.
+
+	#include  "Async.h"
+	...
+	AsyncTask (ENamedThreads::GameThread, []() 
+	{
+		// 게임 스레드에서 실행할 코드 
+	}});
+	...
+
+
+게임 스레드에서 Timer함수
+-----------------------------------------------------------------------
+게임 스레드에서 타이머 기능을 실행하여 생성된 다른 스레드가 수집하는 데이터를 주기적으로 확인할 수 있습니다.
+
+
+
+싱글 스레드 플렛폼에서 지원
+-----------------------------------------------------------------------
+AsyncIOSystemBase.h
+
+Runnable은 SingleThreadRunnable로 확장 할수 있으며, 단일 스레드 일 경우 FRunnable's hook은 자동으로 반환됩니다.
+
+struct CORE_API FAsyncIOSystemBase : public FIOSystem, FRunnable, FSingleThreadRunnable
+/**
+* Gets single thread interface pointer used for ticking this runnable when multi-threading is disabled.
+* If the interface is not implemented, this runnable will not be ticked when FPlatformProcess::SupportsMultithreading() is false.
+*
+* @return Pointer to the single thread interface or nullptr if not implemented.
+*/
+virtual class FSingleThreadRunnable* GetSingleThreadInterface()
+{
+	return nullptr;
+}
+
+
+

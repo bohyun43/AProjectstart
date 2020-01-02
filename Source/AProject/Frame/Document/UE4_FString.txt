@@ -1,0 +1,14 @@
+[FString]
+
+// 생성
+FString TestHUDString = FString(TEXT("This is my test FString."));
+
+// 비교
+TestHUDString.Equals(TEXT("Test"), ESearchCase::CaseSensitive);
+
+// 검색
+TestHUDString.Contains(TEXT("Test"), ESearchCase::CaseSensitive, ESearchDir::FromEnd);	> true/false
+TestHUDString.Find(TEXT("test"), ESearchCase::CaseSensitive, ESearchDir::FromEnd, 10);	> index
+
+// 연결
+StringResult += AddedString;

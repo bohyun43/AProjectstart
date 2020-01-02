@@ -1,0 +1,275 @@
+﻿
+
+[Const Pointer]
+--------------------------------------------------------------------
+const MyStructure *      *		ppMyStruct;			// ptr --> ptr --> const MyStructure
+	  MyStructure *const *		ppMyStruct;			// ptr --> const ptr --> MyStructure
+	  MyStructure *      *const ppMyStruct;			// const ptr --> ptr --> MyStructure
+
+
+
+
+[Native > Smart Pointer]
+
+--------------------------------------------------------------------
+1. 유니크포인터(TUniquePtr) : 객체의 유일한 소유권을 보장하는 서비스입니다.공동 소유는 불가합니다.
+--------------------------------------------------------------------
+NewHouseAddress = new FHouse();
+NewHouseAddress->Size = 100;
+{
+	TUniquePtr<FHouse> MyHouseDeed = TUniquePtr<FHouse>(NewHouseAddress);
+	if (MyHouseDeed.IsValid())
+	{
+		LOG(Warning, TEXT("이 집은 제 단독소유 주택입니다. 내집크기 : %d"), MyHouseDeed->Size);
+	}
+
+	//TUniquePtr<FHouse> FriendsHouseDeed = MyHouseDeed;			// 컴파일 에러! 단독 소유만 가능
+	TUniquePtr<FHouse> FriendsHouseDeed = MoveTemp(MyHouseDeed);	// 집은 그대로 두고 집주인만 변경
+
+	if (!MyHouseDeed.IsValid())
+	{
+		LOG(Warning, TEXT("친구에게 집을 팔았습니다. 친구집크기 : %d"), FriendsHouseDeed->Size);
+	}
+}
+LOG(Warning, TEXT("로컬 영역 벋어나면서, 집은 자동으로 철거되었습니다. 집크기 : %d"), NewHouseAddress->Size);
+
+
+
+--------------------------------------------------------------------
+2. 공유포인터(TSharedPtr)	: 객체에 대해 공동 소유권을 주장할 수 있는 서비스입니다.
+--------------------------------------------------------------------
+NewHouseAddress = new FHouse();
+NewHouseAddress->Size = 150.0f;
+{
+	TSharedPtr<FHouse> MyHouseDeed = MakeShareable(NewHouseAddress);	// 만들어진 집을 차후에 등록
+
+	if (MyHouseDeed.IsValid())
+	{
+		LOG(Warning, TEXT("공동 소유 가능한 집이 되었습니다. 내집크기 : %d"), MyHouseDeed->Size);
+		if (MyHouseDeed.IsUnique())
+		{
+			LOG(Warning, TEXT("현재는 혼자 소유하고 있습니다. 내집크기 : %d"), MyHouseDeed->Size);
+		}
+	}
+
+	TSharedPtr<FHouse> FriendsHouseDeed = MyHouseDeed;
+	if (!FriendsHouseDeed.IsUnique())
+	{
+		LOG(Warning, TEXT("친구와 집을 나눠가지게 되었습니다. 친구집크기 : %d"), FriendsHouseDeed->Size);
+	}
+
+	MyHouseDeed.Reset(); // 내가 집 소유권을 포기함
+	if (FriendsHouseDeed.IsUnique())
+	{
+		LOG(Warning, TEXT("이제 친구만 집을 소유하고 있습니다. 친구집크기 : %d"), FriendsHouseDeed->Size);
+	}
+	LOG(Warning, TEXT("집은 아직 그대로 있습니다. 집크기 : %d"), NewHouseAddress->Size);
+}
+LOG(Warning, TEXT("로컬 영역 벋어나면서, 집은 자동 철거되었습니다. 집크기 : %d"), NewHouseAddress->Size);
+
+
+
+# FRunable (Thread) 지원 클래스 공유 포인터 사용 
+
+TSharedPtr <FRunnableContainer, ESPMode::ThreadSafe> SharedPtr;
+SharedPtr = MakeShareable (Your_FRunnable);
+
+
+--------------------------------------------------------------------
+3. 손환 참조 문제 : TSharedPtr 은 순환참조 문제가 발생할 수 있음.
+--------------------------------------------------------------------
+class FHouse
+{
+public:
+	TSharedPtr<FHouse>	OthersDeed;
+
+	int32 Size = 10;
+};
+
+NewHouseAddress = new FHouse();
+NewHouseAddress->Size = 200.0f;
+
+FHouse* NewHouseAddress2 = new FHouse();
+NewHouseAddress2->Size = 250.0f;
+
+{
+	TSharedPtr<FHouse> MyHouseDeed = MakeShareable(NewHouseAddress);
+	LOG(Warning, TEXT("내 집은 내가 소유합니다. 내집크기 : %d"), MyHouseDeed->Size);
+
+	TSharedPtr<FHouse> FriendsHouseDeed = MakeShareable(NewHouseAddress2);
+	LOG(Warning, TEXT("친구 집은 친구가 소유합니다. 친구집크기 : %d"), FriendsHouseDeed->Size);
+
+	MyHouseDeed->OthersDeed = FriendsHouseDeed;
+	LOG(Warning, TEXT("친구 집을 공동 소유하고 문서를 내 집에 보관합니다. 친구집크기 : %d"), MyHouseDeed->OthersDeed->Size);
+
+	FriendsHouseDeed->OthersDeed = MyHouseDeed;
+	LOG(Warning, TEXT("친구도 내 집을 공동 소유하고 문서를 자기 집에 보관합니다. 내집크기 : %d"), FriendsHouseDeed->OthersDeed->Size);
+}
+
+LOG(Warning, TEXT("집문서가 사라져도 내가 지은 집이 자동 철거되지 않습니다. 첫번째집크기 : %d"), NewHouseAddress->Size);
+LOG(Warning, TEXT("친구가 지은 집도 자동 철거되지 않습니다. 두번째집크기 : %d"), NewHouseAddress2->Size);
+
+NewHouseAddress->OthersDeed.Reset();
+
+LOG(Warning, TEXT("친구가 지은 집을 수동으로 철거했습니다. 집주소가 남아있어서 다행입니다. 두번째집크기 : %d"), NewHouseAddress2->Size);
+LOG(Warning, TEXT("이제서야 내가 지은 집도 자동 철거됩니다. 첫번째집크기 : %d"), NewHouseAddress->Size);
+
+
+--------------------------------------------------------------------
+4. 약포인터(TWeakPtr)		: 객체에 대한 정보는 가지고 있으나, 소유권은 없는 서비스입니다. 예> 부동산 중개업 (간접적으로 객체에 연결함)
+--------------------------------------------------------------------
+class FHouse
+{
+public:
+	TSharedPtr<FHouse>	OthersDeed;
+	TWeakPtr<FHouse>	AccessHouse;
+
+	int32 Size = 10;
+};
+
+NewHouseAddress = new FHouse();
+NewHouseAddress->Size = 300.0f;
+
+NewHouseAddress2 = new FHouse();
+NewHouseAddress2->Size = 350.0f;
+{
+	TSharedPtr<FHouse> MyHouseDeed = MakeShareable(NewHouseAddress);
+	LOG(Warning, TEXT("내 집은 내가 소유합니다. 내집크기 : %d"), MyHouseDeed->Size);
+
+	TSharedPtr<FHouse> FriendsHouseDeed = MakeShareable(NewHouseAddress2);
+	LOG(Warning, TEXT("친구 집은 친구가 소유합니다. 친구집크기 : %d"), FriendsHouseDeed->Size);
+
+	MyHouseDeed->OthersDeed = FriendsHouseDeed;
+	LOG(Warning, TEXT("친구 집을 공동 소유하고 문서를 내 집에 보관합니다. 친구집크기 : %d"), MyHouseDeed->OthersDeed->Size);
+	
+	FriendsHouseDeed->AccessHouse = MyHouseDeed;
+	LOG(Warning, TEXT("친구가 내 집 정보를 열람합니다. 내집크기 : %d"), FriendsHouseDeed->AccessHouse.Pin()->Size);
+}
+
+LOG(Warning, TEXT("내가 지은 집은 자동 철거됩니다. 첫번째집크기 : %d"), NewHouseAddress->Size);
+LOG(Warning, TEXT("친구가 지은 집도 자동 철거됩니다. 두번째집크기 : %d"), NewHouseAddress2->Size);
+
+
+언리얼 오브젝트는 언리얼 엔진 가상머신의 가비지 컬렉션(Garbage Collection, 줄여서 GC) 시스템에 의해 자동으로 관리되기 때문입니다.
+하나의 언리얼 오브젝트가 GC 시스템에 의해 자동 관리되기 위해서는 선언에 반드시 UPROPERY 매크로가 들어가야 합니다.
+그러면 언리얼 엔진에 의해서 필요가 없어질 때 자동으로 회수됩니다.
+
+언리얼 오브젝트의 포인터를 소멸할 때에는 BeginConditionalDestroy()라는 함수를 호출해주고 
+시스템이 해지해줄 때까지 기다리는 수 밖에 없습니다.
+액터의 경우에는 월드의 씬 정보를 업데이트 해야하기 때문에 먼저 DestroyActor 함수도 추가로 호출해야 합니다
+
+
+--------------------------------------------------------------------
+5. TSharedRef : null 가능하지 않은 공유 포인터, 항상 유효하기 때문에 공유 포인터와는 달리 IsValid() 메서드조차 없음.
+--------------------------------------------------------------------
+TSharedRef<FTreeNode>	NodeRef(new FTreeNode());		
+NodeRef->ListChildren();
+(*NodeRef).ListChildren();
+const FTreeNode& NodeVar = NodeRef.Get();
+
+TSharedRef<UBool>		mptyBool;						// 컴파일 불가!!
+
+TSharedPtr<FTreeNode> SomeNodePtr = NodeRef;			// Ref > Ptr 전환
+NodeRef = SomeNodePtr.ToSharedRef();					// Ptr > Ref 전환 (null일 경우 Asset 발생)
+
+
+--------------------------------------------------------------------
+6. GC 동작 
+--------------------------------------------------------------------
+1. 자동 : [프로젝트 설정] > [엔진:Garbage Collection] > 기본:60 : 60초(1분) 마다 가비지 컬렌션 실행.
+2. 강제 : GetWorld()->ForceGarbageCollection(true);
+4. 제외 : AddToRoot(); or FGCObject 상속 > 호출로 GC 형향 안받고 유지 시킴 
+
+언리얼 메모리 관리
+    언리얼 에디터 > 프로젝트 세팅 > Gargabe Collection > General [Time Between…. Kill objects] 수치 변경
+        : 적용된 시간마다 GC 를 검사하여 객체를 소멸한다.
+        : 객체 소멸 흐름
+            1. GC에 의해 수집된 오브젝트는 삭제 되기 위해 Check 된다.
+            2. 다음 프레임에 삭제 체크된 객체가 제거된다.
+        
+
+일반적인 UObject 이외의 것도 오브젝트로의 레퍼런스를 추가하고 가비지 컬렉션을 막을 수 있습니다. 
+그러기 위해서, 오브젝트는 반드시 FGCObject에서 파생되어 그 AddReferencedObjects 클래스를 오버라이드해야 합니다.
+
+class FNativeClass : public FGCObject
+{
+public:
+    UObject* SafeObject;
+
+    FNativeClass(UObject* Object) : SafeObject(Object) { }
+
+    // 꼭 필요해서 가비지 컬렉팅되지 않도록 하려는 오브젝트에는 FReferenceCollector를 사용하여 강 레퍼런스를 수동 추가해 줍니다. 
+    // 그 오브젝트가 삭제되어 소멸자가 실행될 때, 그 오브젝트는 추가한 모든 레퍼런스를 자동으로 지웁니다.
+    void AddReferencedObjects(FReferenceCollector& Collector) override
+    {
+        Collector.AddReferencedObject(SafeObject);
+    }
+};
+
+
+
+
+
+--------------------------------------------------------------------
+7. 헬퍼 클래스와 함수
+--------------------------------------------------------------------
+TSharedFromThis				"this" 에서 TSharedRef 를 구하려면 여기에서 클래스를 파생시키면 됩니다.
+
+: 현재 인스턴스를 꼭 공유 레퍼런스로 접근하고 싶을 때
+class FAnimation : public TSharedFromThis<FMyClass>
+{
+	void Register()
+	{
+		// Access a shared reference to 'this'
+		TSharedRef<FMyClass> SharedThis = AsSharedRef();
+
+		// Class a function that is expecting a shared reference
+		AnimationSystem::RegisterAnimation(SharedThis);
+	}
+}
+
+[형변환]
+MakeShareable<T>()			C++ 포인터에서 공유 포인터를 초기화(init)시키는 데 사용됩니다 (묵시적 변환 허용).
+StaticCastSharedRef<T>()	정적인 형변환 유틸리티 함수로, 보통 파생 유형으로 내림변환(downcast)하는 데 사용됩니다.
+ConstCastSharedRef<T>()		'const' 레퍼런스를 'mutable' 스마트 레퍼런스로 변환합니다.
+DynamicCastSharedRef<T>()	동적인 형변환 유틸리티 함수로, 보통 파생 유형으로 내림변환하는 데 사용됩니다.
+StaticCastSharedPtr<T>()	정적인 형변환 유틸리티 함수로, 보통 파생 유형으로 내림변환하는 데 사용됩니다.
+ConstCastSharedPtr<T>()		'const' 스마트 포인터를 'mutable' 스마트 포인터로 변환합니다.
+DynamicCastSharedPtr<T>()	동적인 형변환 유틸리티 함수로, 보통 파생 유형으로 내림변환하는 데 사용됩니다.
+
+예제>
+TSharedPtr<FDragDropOperation> Operation	= DragDropEvent.GetOperation();
+TSharedPtr<FAssetDragDropOp>   DragDropOp	= StaticCastSharedPtr<FAssetDragDropOp>(Operation);
+
+--------------------------------------------------------------------
+8. [UObject:T형 클래스]
+--------------------------------------------------------------------
+
+TWeakObjectPtr<>	: 언리얼 오브젝트를 약참조 사용.
+
+	// 의존 대상 (약참조 사용에 주목)
+	TWeakObjectPtr<class UObject> PrerequisiteObject;
+
+    UI의 리스트박스에서 언리얼 오브젝트의 목록을 보여주고 싶을 때에는 TWeakObjectPtr을 사용해 언리얼 오브젝트를 약참조(Weak Referencing)하는 것이 바람직합니다. 
+    일반 참조를 걸게되면 UI가 띄워져 있는 동안에는 UI에서 보여지는 모든 언리얼 오브젝트의 레퍼런스 카운팅이 올라가게 되므로
+    언리얼 오브젝트를 삭제해도 GC시스템 에서 회수가 일어나지 않습니다. 
+    
+
+TSubclassOf<>		: UClass 유형 안전성을 제공하는 템플릿 클래스 (파생 클래스만 지원)
+
+	// UDamageType 파생 클래스만 선택가능.
+	UPROPERTY(EditDefaultsOnly, Category = Damage)
+	TSubclassOf<UDamageType> DamageType;
+
+
+TSoftObjectPtr<>	: 
+
+--------------------------------------------------------------------
+9. Thread Safe
+--------------------------------------------------------------------
+TSharedPtr<T, ESPMode::ThreadSafe>
+TSharedRef<T, ESPMode::ThreadSafe>
+TWeakPtr<T, ESPMode::ThreadSafe>
+TSharedFromThis<T, ESPMode::ThreadSafe>
+
+

@@ -1,0 +1,39 @@
+
+UFUNCTION() 설명
+----------------------------------------------------------------------
+
+[Param1]
+BlueprintCallable
+	- 블루프린트에서 네이티브로 통신	
+	- 블루프린트에서 함수 노출됨
+	- 호출중인 오브젝트에 관해서나 다른 글로벌한 상태를 바꾸는 네이티브 코드를 호출
+	- 실행 라인 필요함
+
+BlueprintImplementableEvent
+	- 네이티브에서 블루프린트로 통신	
+	- 블루프린트에서 이벤트로 지정할 수 있음 (블루 프린트에서 > C++ 로 진입 지원)
+	- C++ 구현 함수로 호출됨.
+
+BlueprintNativeEvent
+	- 네이티브에서 블루프린트로 통신
+	- 블루프린트에서 이벤트로 지정할 수 있음 (블루 프린트에서 > C++ 로 진입 지원)
+	- 블루프린트에서 C++ 구현 함수를 오버라이드 할수 있음.
+    
+    ex>
+    UFUNCTION(BlueprintNativeEvent, Category = StageLoader)
+	void OnLoadStage();
+
+	virtual void OnLoadStage_Implementation();
+
+BlueprintPure
+	- 블루프린트에서 네이티브로 통신	
+	- 블루프린트에서 함수 노출됨
+	- 호출중인 오브젝트에 관해서나 다른 글로벌한 상태를 바꾸지 않는 네이티브 코드를 호출
+	- 실행 라인 필요 없음.
+
+BlueprintAssignable	
+	- 블루프린트에서 할당 가능하도록 노출됩니다. (Deletegate:Event) 할당.
+
+
+[Param2]
+Category = ""	: EditorProperty 에 추가할 위치

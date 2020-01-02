@@ -1,0 +1,54 @@
+
+에셋을 로딩하기 위한 방법
+
+[Hard Referencing]
+ - 생성자 코드에서 ConstructorHelpers 를 사용하여 게임 시작전 애셋을 로딩
+ - 애셋이 정확히 있는지 검증하기 위한 목적
+
+ 예제>
+	// 데이터 애셋 하드 레퍼런싱
+ 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_CARDBOARD(TEXT("/Game/Character/CompleteCharacters/SK_CharM_Cardboard.SK_CharM_Cardboard"));
+	if (SK_CARDBOARD.Succeeded())
+	{
+		GetMesh()->SetSkeletalMesh(SK_CARDBOARD.Object);
+	}
+
+	// 클레스 애셋 하드 레퍼런싱
+	// AnimationBlueprint -> AnimInstance로 관리됨(C++, ClassType)
+	static ConstructorHelpers::FClassFinder<UAnimInstance> WARRIOR_ANIM(TEXT("/Game/PirateStudy/Animations/BP_WarriorAnim.BP_WarriorAnim_C"));
+	if (WARRIOR_ANIM.Succeeded())
+	{
+		GetMesh()->SetAnimInstanceClass(WARRIOR_ANIM.Class);
+	}
+
+
+
+[Soft Referencing]
+ - 스트리밍 방식으로 천천히 로딩 되는 애셋
+ - 애셋의 데이터 정보를 가져올 때에는 FStringAssetReference(FSoftObjectPath) 구조체를,
+   애셋의 클래스 정보를 가져올 때에는 FStringClassReference(FSoftClassPath)  구조체를, 사용하여 경로 지정
+ - FStreamableManager으로 데이터 지연 로딩
+
+ 예제>
+	void UGameCheatManager::GrantItems()
+	{
+		   TArray<FSoftObjectPath> ItemsToStream;
+		   FStreamableManager& Streamable = UGameGlobals::Get().StreamableManager;
+		   for(int32 i = 0; i < ItemList.Num(); ++i)
+		   {
+				  ItemsToStream.AddUnique(ItemList[i].ToStringReference());
+		   }
+		   Streamable.RequestAsyncLoad(ItemsToStream, FStreamableDelegate::CreateUObject(this, &UGameCheatManager::GrantItemsDeferred));
+	}
+
+	void UGameCheatManager::GrantItemsDeferred()
+	{
+		   for(int32 i = 0; i < ItemList.Num(); ++i)
+		   {
+				  UGameItemData* ItemData = ItemList[i].Get();
+				  if(ItemData)
+				  {
+						 MyPC->GrantItem(ItemData);
+				  }
+		   }
+	}

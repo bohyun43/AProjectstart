@@ -1,0 +1,41 @@
+﻿
+UPROPEETY() 설명
+----------------------------------------------------------------------
+언리얼 오브젝트가 GC 시스템에 의해 자동 관리되기 위해서 선언에 반드시 UPROPERY 매크로가 들어가야 합니다.
+그러면 언리얼 엔진에 의해서 필요가 없어질 때 자동으로 회수되며 TSharedPtr<> 과 작동 방식이 같다.
+
+
+[Param1]
+BlueprintReadWrite	: 블루프린트 로직에서 해당 멤버 변수에 읽기 / 쓰기 하느지에 대한 권한
+BlueprintReadOnly	: 블루프린트 로직에서 해당 멤버 읽기만 하는지에 대한 권한
+
+[Param2]
+EditDefaultsOnly
+EditInstanceOnly
+EditAnywhere
+VisibleDefaultsOnly
+VisibleInstanceOnly
+VisibleAnywhere
+	
+전 인자
+	Edit		: 편집이 가능한지 (밸류 타입)
+	Visible		: 보여주기만 할 것인지 (포인터 타입)
+
+후 인자
+	DefaultsOnly: 클래스 설계도에서만 변수 편집 화면을 보여주도록 지정하는 키워드 - 공유 값을 갖도록 지원
+	InstanceOnly: 언리얼 오브젝트의 인스턴스에서만 변수 편집 화면을 보여주게 만드는 키워드 - 인스턴스 개별 값 지원
+	Anywhere	: 둘 다 보여주게 하는 키워드
+
+				Edit 										Visible 
+DefaultsOnly	인스턴스가 공통으로 가져야 할 값의 편집 	설계화면에서만 보여질 값 
+InstanceOnly	인스턴스 별로 다르게 있어야 할 값의 편집	인스턴스에서만 보여질 값 
+Anywhere	 	범용적으로 변경되는 값의 편집	 			객체 레퍼런스 및 모든 화면에서 보여질 값
+
+[추가 인자]
+Catetory = ""	:  EditorProperty 에 추가할 위치
+
+[추가 인자]
+Meta = (AllowPrivateAccess = "true") : Private 항목을 에니터에 노출 시킴.
+			
+[추가 인자] BlueprintAssignable
+UPROPERTY(BlueprintAssignable, Category = "Title") : Delegate Bind 에디터 지원.

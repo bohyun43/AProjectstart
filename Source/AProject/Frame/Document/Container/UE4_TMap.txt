@@ -1,0 +1,61 @@
+[TMap]
+
+- Key 고유성 보장. 
+- 자동 소팅 안됨.
+
+TMap<int32, FString> defineMap;
+
+
+// 추가
+defineMap.Add( 1, TEXT("Apple"));			// 이미 있을 경우 대체한다.
+defineMap.Add( 2, TEXT("Banana"));
+defineMap.Add( 3, TEXT("Cherry"));
+defineMap.Emplace( 3, TEXT("Coconut"));		// 이미 있을 경우 대체한다.
+
+// 반복
+for( auto& ele : defineMap )
+{
+	FPlatformMisc::LocalPrint(*FString::Print("%d %s"), ele.Key, *ele.Value );
+}
+
+// 반복 Iterator (CreateIterator, CreateConstIterator)
+for( auto it = defineMap.CreateConstIterator() it; ++it)
+{
+	FPlatformMisc::LocalPrint(*FString::Print("%d %s"), it.Key(), *it.Value() );
+}
+
+
+// 일반
+FString  name		= defineMap[3];
+bool     has		= defineMap.Contains(3);
+FString* nameptr	= defineMap.Find(3);
+FString& name		= defineMap.FindOrAdd(8);			// 검색하여 있으면 반환, 없으면 기본 생성자("") 추가&반환
+FString  copy		= defineMap.FindRef(3);				// 검색하여 있으면 사본 반환, 없으면 기본 생성자("") 반환
+
+defineMap.Remove(3);									// 제거
+FString name = defineMap.FindAndRemoveChecked(3);		// 없으면 Assert, 있으면 반환&제거
+bool   check = efineMap.RemoveAndCopyValue(3, name);	// 없으면 false, 있으면 true, 및 반환&제거
+defineMap.Empty();										// 비우기
+
+
+// 컨테이너 분리
+TArray<int32>		defineKey;
+TArray<FString>		defineValue;
+
+defineMap.GenerateKeyArray(defineKey);
+defineMap.GenerateValueArray(defineValue);
+
+
+// 소팅
+defineMap.KeySort( [](int32 A, int32 B) { return A > B;} );											// 소팅 lambda 제공
+defineMap.ValueSort( [](const FString& A, const FString& B) { return A.Len() > B.Len()} );	    // 소팅 lambda 제공
+
+
+// 이동
+TMap<int32, FString> newMap = defineMap;	// 사본 복사
+defineMap = MoveTemp(newMap);				// 이동.
+
+defineMap.Reset();				// 데이터는 제거 메모리는 유지.
+defineMap.Reserve(10);			// 데이터 공간 미리 확보.
+defineMap.Compact();			// 비어있는 공간과 사용중인 공간 구분함
+defineMap.Shrink();				// 비어있는 공간 제거 (Compact와 같이 사용)

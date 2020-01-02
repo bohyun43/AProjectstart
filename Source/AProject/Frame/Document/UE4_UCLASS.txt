@@ -1,0 +1,83 @@
+﻿
+UCLASS() 설명
+----------------------------------------------------------------------
+1. BlueprintType	: 이 C++ 클래스는 블루프린트에서 변수로 선언이 가능한 타입임을 지정합니다.
+2. Blueprintable	: 블루프린트에서 이 C++ 클래스를 상속받아서 새롭게 클래스를 확장할 수 있습니다.
+3. NotBlueprintable : 블루 프린트 불가능 (부모에서  BlueprintType  기능을 무효화 시킵니다.)
+
+UClass 정보 얻기
+	컴파일 타임 : MyClassType::StaticClass()
+	런타임		: MyClassInstance->GetClass()
+
+
+UObject 설명
+----------------------------------------------------------------------
+언리얼 오브젝트형 C++ 선언시 지원
+
+1. CDO(Class Default Object): 객체의 초기 값을 자체적으로 관리합니다.
+2. Reflection				: 객체 정보를 런타임에서 실시간 조회가 가능합니다.
+3. GC(Garbage Collection)	: 참조되지 않는 객체를 메모리에서 자동 해제할 수 있습니다.
+4. Serialization			: 객체와 속성 정보를 통으로 안전하게 보관하고 로딩합니다.
+5. Delegate					: 함수를 묶어서 효과적으로 관리하고 호출할 수 있습니다.
+6. Replication				: 네트워크 상에서 객체간에 동기화를 시킬 수 있습니다.
+7. Editor Integration		: 언리얼 에디터 인터페이스를 통해 값을 편집할 수 있습니다.
+
+
+
+CDO 에서 Asset 접근
+----------------------------------------------------------------------
+ContructorHelpers 클래스 사용
+	- ClassFinder	: 애샛의 형식(Type) 정보를 가져올 때 사용
+	- ObjectFinder	: 애샛의 내용물을 가져올때 사용
+
+	ex > 
+	AWeapon::AWeapon()
+	{
+		PrimaryActorTick.bCanEverTick = true;
+
+		Weapon		  = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponHashValue"));
+		RootComponent = Weapon;
+
+		// 애셋 내용 가져오기.
+		static ConstructorHelpers::FObjectFinder<USkeletalMesh>SK_BlackKnight(TEXT("SkeletalMesh'/Game/InfinityBladeWeapons/Weapons/Blade/Swords/Blade_BlackKnight/SK_Blade_BlackKnight.SK_Blade_BlackKnight'"));
+		Weapon->SetSkeletalMesh(SK_BlackKnight.Object);
+	}
+
+
+UClass Property 접근 : TFieldIterator
+----------------------------------------------------------------------
+void UABGameInstance::Init()
+{
+	Super::Init();
+
+	UClass* ClassInfo1 = WebConnection->GetClass();
+	UClass* ClassInfo2 = UWebConnection::StaticClass();
+
+	if (ClassInfo1 == ClassInfo2)
+	{
+		_LOG(Warning, TEXT("ClassInfo1 is same with ClassInfo2"));
+	}
+
+	// UPROPERTY 내용에 접근
+	for (TFieldIterator<UProperty> It(ClassInfo1); It; ++It)
+	{
+		_LOG(Warning, TEXT("Field : %s, Type : %s"), *It->GetName(), *It->GetClass()->GetName());
+		UStrProperty* StrProp = FindField<UStrProperty>(ClassInfo1, *It->GetName());
+
+		if (StrProp)
+		{
+			_LOG(Warning, TEXT("Value = %s"), *StrProp->GetPropertyValue_InContainer(WebConnection));
+		}
+	}
+
+	// UFUNCTION 내용에 접근
+	for (const auto& Entry : ClassInfo1->NativeFunctionLookupTable)
+	{
+		_LOG(Warning, TEXT("Function = %s"), *Entry.Name.ToString());
+		UFunction* Func1 = ClassInfo1->FindFunctionByName(Entry.Name);
+		if (Func1->ParmsSize == 0)
+		{
+			WebConnection->ProcessEvent(Func1, NULL);
+		}
+	}
+}

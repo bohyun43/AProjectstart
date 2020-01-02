@@ -1,0 +1,31 @@
+
+-ini Config 파일을 통한 유연한 언리얼 데이터 목록 관리
+
+	1. 언리얼 오브젝트가 기본값을 INI 파일에서 읽기 위해 UCLASS(config = "파일")을 설정한다.
+	2. 불러들일 PROPERTY(config) 키워드를 설정한다.
+
+->언리얼은 초기화시 INI파일에서 속성값을 읽어 설정한다.
+->DefaultStudyCharacter.ini 파일을 읽어들인다.
+
+
+[참고] http://api.unrealengine.com/KOR/Programming/Basics/ConfigurationFiles/ 
+
+[/ Script / ModuleName.ExampleClass]
+ExampleVariable = Value			// 변수
++ ExampleVariable = Value		// 배열
+
+; : 코멘트
++ : 해당 프로퍼티가 (기존 환경설정 파일 또는 같은 환경설정 파일의 앞부분에) 존재하지 않는 경우 줄을 추가합니다.
+- : 줄을 제거합니다(만 정확히 일치해야 합니다).
+. : 새 프로퍼티를 추가합니다.
+!: 프로퍼티를 제거합니다만, 정확히 일치할 필요는 없으며, 프로퍼티 이름만 맞으면 됩니다.
+
+주의 > 클래스 부분의 U, F, A 등의 인자는 생략한다. (CDO 부분이라 App를 재빌드 해야 적용된다)
+
+[/Script/Engine.PlayerInput]
+Bindings = (Name = "Q", Command = "Foo")
+.Bindings = (Name = "Q", Command = "Bar")
+
+[/Script/EngineSettings.GameMapsSettings]
+GameInstanceClass = /Script/Pirate.UStudyGameInstance
+>> EngeinSettigns 모듈에 있는 GameMapSetting class에 GameInstanceClass 변수값에 UStudyGameInstance 를 지정함.

@@ -1,0 +1,192 @@
+[TArray]
+
+TArray<int32> IntArray;
+
+IntArray.Init(10, 5);
+// IntArray == [10,10,10,10,10]
+
+TArray<FString> StrArr;
+StrArr.Add    (TEXT("Hello"));		// 엘리먼트 복사하여 추가.
+StrArr.Emplace(TEXT("World"));		// 입력된 인수를 새로 생성하여 추가.
+// StrArr == ["Hello","World"]
+
+FString Arr[] = { TEXT("of"), TEXT("Tomorrow") };
+StrArr.Append(Arr, ARRAY_COUNT(Arr));
+// StrArr == ["Hello","World","of","Tomorrow"]
+
+StrArr.AddUnique(TEXT("!"));
+// StrArr == ["Hello","World","of","Tomorrow","!"]
+
+StrArr.AddUnique(TEXT("!"));
+// 이미 있으므로, 변경 되지 않음
+
+StrArr.Insert(TEXT("Brave"), 1);
+// StrArr == ["Hello","Brave","World","of","Tomorrow","!"]
+
+StrArr.SetNum(8);
+// StrArr == ["Hello","Brave","World","of","Tomorrow","!","",""]
+
+StrArr.SetNum(6);
+// StrArr == ["Hello","Brave","World","of","Tomorrow","!"]
+
+반복문
+----------------------------------------------
+FString JoinedStr;
+for (auto& Str : StrArr)
+{
+	JoinedStr += Str;
+	JoinedStr += TEXT(" ");
+}
+// JoinedStr == "Hello Brave World of Tomorrow ! "
+
+	for (int32 Index = 0; Index != StrArr.Num(); ++Index)
+	{
+		JoinedStr += StrArr[Index];
+		JoinedStr += TEXT(" ");
+	}
+
+	for (auto It = StrArr.CreateConstIterator(); It; ++It)
+	{
+		JoinedStr += *It;
+		JoinedStr += TEXT(" ");
+	}
+
+
+소팅
+----------------------------------------------
+StrArr.Sort();
+// StrArr == ["!","Brave","Hello","of","Tomorrow","World"]
+
+// 같은 길이단에 대한 과거 순서 유지 안됨
+StrArr.Sort([](const FString& A, const FString& B) { return A.Len() < B.Len(); });
+// StrArr == ["!","of","Hello","Brave","World","Tomorrow"]
+
+// 같은 길이단에 대한 과거 순서 유지 안됨
+StrArr.HeapSort([](const FString& A, const FString& B) { return A.Len() < B.Len(); });
+// StrArr == ["!","of","Hello","Brave","World","Tomorrow"]
+
+// 같은 길이단에 대한 과거 순서 유지 됨. (병합 소트)
+StrArr.StableSort([](const FString& A, const FString& B) { return A.Len() < B.Len(); });
+// StrArr == ["!","of","Brave","Hello","World","Tomorrow"]
+
+
+쿼리
+----------------------------------------------
+int32 Count = StrArr.Num();
+// Count == 6
+
+FString* StrPtr = StrArr.GetData();
+// StrPtr[0] == "!"
+// StrPtr[1] == "of"
+// ...
+// StrPtr[5] == "Tomorrow"
+// StrPtr[6] - undefined behavior
+
+uint32 ElementSize = StrArr.GetTypeSize();
+// ElementSize == sizeof(FString)
+
+FString Elem1 = StrArr[1];
+// Elem1 == "of
+
+bool bValidM1 = StrArr.IsValidIndex(-1);
+bool bValid0 = StrArr.IsValidIndex(0);
+bool bValid5 = StrArr.IsValidIndex(5);
+bool bValid6 = StrArr.IsValidIndex(6);
+// bValidM1 == false
+// bValid0  == true
+// bValid5  == true
+// bValid6  == false
+
+StrArr[3] = StrArr[3].ToUpper();
+// StrArr == ["!","of","Brave","HELLO","World","Tomorrow"]
+
+FString ElemEnd		= StrArr.Last();
+FString ElemEnd0	= StrArr.Last(0);
+FString ElemEnd1	= StrArr.Last(1);
+FString ElemTop		= StrArr.Top();
+// ElemEnd  == "Tomorrow"
+// ElemEnd0 == "Tomorrow"
+// ElemEnd1 == "World"
+// ElemTop  == "Tomorrow"
+
+bool bHello = StrArr.Contains(TEXT("Hello"));
+bool bGoodbye = StrArr.Contains(TEXT("Goodbye"));
+// bHello   == true
+// bGoodbye == false
+
+
+int32 Index;
+if (StrArr.Find(TEXT("Hello"), Index))
+{
+	// Index == 3
+}
+
+int32 Index2 = StrArr.Find(TEXT("Hello"));
+int32 IndexLast2 = StrArr.FindLast(TEXT("Hello"));
+int32 IndexNone = StrArr.Find(TEXT("None"));
+// Index2     == 3
+// IndexLast2 == 3
+// IndexNone  == INDEX_NONE
+
+int32 Index = StrArr.IndexOfByKey(TEXT("Hello"));
+// Index == 3
+
+auto* OfPtr = StrArr.FindByKey(TEXT("of")));
+auto* ThePtr = StrArr.FindByKey(TEXT("the")));
+// OfPtr  == &StrArr[1]
+// ThePtr == nullptr
+
+auto* Len5Ptr = StrArr.FindByPredicate([](const FString& Str) { return Str.Len() == 5; });
+auto* Len6Ptr = StrArr.FindByPredicate([](const FString& Str) { return Str.Len() == 6; });
+// Len5Ptr == &StrArr[2]
+// Len6Ptr == nullptr
+
+StrArr.Remove(TEXT("hello"));
+// StrArr == ["!","of","Brave","World","Tomorrow"]
+
+StrArr.Remove(TEXT("goodbye"));
+// StrArr is unchanged, as it doesn't contain "goodbye"
+
+StrArr.Pop();
+// StrArr == ["!", "of", "Brave", "World"]
+
+TArray<int32> ValArr;
+int32 Temp[] = { 10, 20, 30, 5, 10, 15, 20, 25, 30 };
+ValArr.Append(Temp, ARRAY_COUNT(Temp));
+// ValArr == [10,20,30,5,10,15,20,25,30]
+
+ValArr.Remove(20);
+// ValArr == [10,30,5,10,15,25,30]
+
+ValArr.RemoveSingle(30);
+// ValArr == [10,5,10,15,25,30]
+
+ValArr.RemoveAt(2); // Removes the element at index 2
+					// ValArr == [10,5,15,25,30]
+
+ValArr.RemoveAt(99); // This will cause a runtime error as
+					 // there is no element at index 99
+
+Slack : 느슨하게하다.
+Shrink: 축소하다.
+
+SlackArray.Add(5);
+SlackArray.Add(10);
+SlackArray.Add(15);
+SlackArray.Add(20);
+// SlackArray.GetSlack() == 6	> 내부 메모리 재설정 (자동)
+// SlackArray.Num()      == 4
+// SlackArray.Max()      == 10
+SlackArray.Shrink();			> 빈부분 제거
+// SlackArray.GetSlack() == 0	
+// SlackArray.Num()      == 4
+// SlackArray.Max()      == 4
+
+SlackArray.Reset(0);			> Shrink 처럼 빈부분제거 안함.
+// SlackArray.GetSlack() == 3
+// SlackArray.Num()      == 0
+// SlackArray.Max()      == 3
+SlackArray.Reset(10);			> 메모리 재 설정.
+// SlackArray.GetSlack() == 10
+// SlackArray.Num()      == 0
+// SlackArray.Max()      == 10

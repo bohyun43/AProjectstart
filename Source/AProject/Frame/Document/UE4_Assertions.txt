@@ -1,0 +1,127 @@
+
+[참고 위치]
+UE4 / Engine / Source / Runtime / Core / Public / Misc / AssertionMacros.h
+
+
+
+check(표현식);
+-------------------------------------------------------- -
+	표현식을 실행한 뒤, 어서트 결과가 false 이면 실행을 중지시킵니다
+
+	check(Mesh != nullptr);
+	check(bWasInitialized && "Did you forget to call Init()?");		> Compile Output 창에 문자열 노출
+
+
+checkf(표현식, ...);
+-------------------------------------------------------- -
+	표현식이 true 가 아니면 디버깅에 도움이 되는 추가 정보를 출력하는 것이 가능합니다.
+	컴파일 면에 있어서는 check() 와 똑같습니다.
+
+	checkf(WasDestroyed, TEXT("Failed to destroy Actor %s (%s)"), *Actor->GetClass()->GetName(), *Actor->GetActorLabel());
+	checkf(TCString<ANSICHAR>::Strlen(Key) >= KEYLENGTH(AES_KEYBITS), TEXT("AES_KEY needs to be at least %d characters"), KEYLENGTH(AES_KEYBITS));
+
+
+verify(표현식);
+-------------------------------------------------------- -
+	DO_CHECK 가 켜져있으면, check() 와 똑같은 역할을 합니다.
+
+verifyf(표현식, ...);
+-------------------------------------------------------- -
+	DO_CHECK 가 켜져있으면, checkf() 와 똑같은 역할을 합니다.
+
+
+checkCode(표현식);
+-------------------------------------------------------- -
+	일반적인 check() 보다 약간 더 복잡합니다.
+	한 번 실행되는 do / while 루프 안에서 표현식을 실행합니다.
+	표현식은 do / while 대괄호 범위 안에 놓입니다. 엔진에서 자주 사용되지는 않지만, 필요하면 쓸 수는 있습니다.
+	표준 check() 매크로처럼 이 매크로도 DO_CHECK 가 꺼져있으면 컴파일에서 제외됩니다
+
+	checkCode(	if (Object->HasAnyFlags(RF_PendingKill)) 
+				{
+					UE_LOG(LogUObjectGlobals, Fatal, TEXT("Object %s is part of root set though has been marked RF_PendingKill!"), *Object->GetFullName()); 
+				});
+
+
+checkNoEntry();
+-------------------------------------------------------- -
+	이 매크로는 표현식을 받지 않으며, 절대 실행될 일이 없는 코드 경로를 표시하는 데 사용됩니다.
+
+	switch (MyEnum)
+	{
+	case MyEnumValue:
+		break;
+	default:
+		checkNoEntry();
+		break;
+	}
+
+
+checkNoReentry();
+-------------------------------------------------------- -
+	이 매크로는 호출이 주어진 함수에 재진입하는 것을 방지하기 위해 사용됩니다.한 번 호출이 완료되기 전까지 다시 호출해서는 안될 함수에 사용하세요.
+
+	void NoReentry()
+	{
+		checkNoReentry();
+	}
+
+
+checkNoRecursion();
+-------------------------------------------------------- -
+	checkNoReentry() 와 같은 검사를 하나, 이름으로 그 의도를 더욱 명확히 알 수 있습니다.
+
+	int32 Recurse(int32 A, int32 B)
+	{
+		checkNoRecursion();
+		return Recurse(A - 1, B - 1);
+	}
+
+
+unimplemented();
+-------------------------------------------------------- -
+	DO_CHECK 매크로의 첫 클래스 내 마지막 매크로는 함수에 구현이 없어서 특정 클래스에서 호출하면 안되거나 덮어써야 하는 함수를 표시하는 데 사용됩니다.
+
+	class FNoImpl
+	{
+		virtual void DoStuff()
+		{
+			// You must override this
+			unimplemented();
+		}
+	};
+
+
+xxxSlow();
+-------------------------------------------------------- -
+	DO_GUARD_SLOW 가 켜졌을 때만 실행, DO_GUARD_SLOW 는 보통 디버그 빌드에만 켜기는 하나, 
+	프로젝트에 직접 바꿀 수 있기는 합니다.느리면서 규칙을 지나치게 따지는 검사일 것으로 기대되어, 디벨롭먼트 또는 쉬핑 빌드에서는 필요치 않습니다.
+
+	checkSlow(List->HasCycle());
+	checkfSlow(Class->IsA(AActor::StaticClass()), TEXT("Class (%s) is wrong type"), Class->GetName());
+	verifySlow(LastValue == Current);
+
+
+ensure(표현식);
+-------------------------------------------------------- -
+	표현식을 검증하여 실패하면 그 지점까지 이르는 콜스택을 생성합니다.
+	
+	if (ensure(InObject != NULL))
+	{
+		InObject->Modify();
+	}
+
+
+ensureMsg(표현식, 메시지);
+-------------------------------------------------------- -
+	표현식을 검증, 리포트에 메시지를 추가시킨 콜스택을 생성합니다.
+
+	ensureMsg(Node != nullptr, TEXT("Node is invalid"));
+	ensureMsgf(표현식, 메시지, ...);
+
+	표현식을 검증, 생성된 리포트에 대한 콜스택과 짝지은 상세 정보를 포함시킵니다.checkf() 나 verifyf() 처럼, 문제 추적에 도움이 되는 컨텍스트 정보를 포함시킬 수 있습니다.
+
+	if (ensureMsgf(!bModal, TEXT("Could not create dialog because modal is set to (%d)"), int32(bModal)))
+	{
+		...
+	}

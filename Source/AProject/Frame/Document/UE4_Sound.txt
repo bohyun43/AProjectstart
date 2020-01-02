@@ -1,0 +1,26 @@
+
+사운드 처리
+
+// SoundCue 로딩.
+static ConstructorHelpers::FObjectFinder iTeleport(TEXT("/Game/Sound_Cues/Teleport"));
+USoundCue* SoundCue = iTeleport.Object;
+
+// When playing 2D sound
+UAudioComponent* AudioComponent = UGameplayStatics::SpawnSound2D(this, SoundCue, volume_multiplier);
+
+// When playing 3D sound
+UAudioComponent* AudioComponent = UGameplayStatics::SpawnSoundAtLocation(this, SoundCue, location, FRotator::ZeroRotator, volume_multiplier, pitch_amount, 0.0f, nullptr, nullptr, true);
+
+// Stopping a sound
+AudioComponent->SetActive(false);
+
+// FadeIn
+const float fadeTime	= 1.f;
+const float volume		= 0.f;
+const float startTime	= 0.f;
+AudioComponent->FadeIn(fadeTime, volume, startTime);
+AudioComponent->Play();
+
+// Tick Pitch 제어 [SoundCue Editor] > [Continuous Modulator] 설치 연결 및 파라미터 이름 "pitch" 설정.
+float changeVolume = rand();
+AudioComponent->SetFloatParameter(FName("pitch"), changeVolume);

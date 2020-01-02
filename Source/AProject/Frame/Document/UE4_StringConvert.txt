@@ -1,0 +1,92 @@
+
+!언리얼4 문자열 변환
+
+// FString
+//--------------------------------------------------------------
+http ://api.unrealengine.com/KOR/Programming/UnrealArchitecture/StringHandling/FString/
+
+#변환 1
+float			FString::SanitizeFloat(FloatVariable);	
+int				FString::FromInt(IntVariable);
+bool			InBool ? TEXT("true") : TEXT("false");							'true' 거나 'false' 거나
+FVector			VectorVariable.ToString();										'X= Y= Z='
+FVector2D		Vector2DVariable.ToString();									'X= Y='
+FRotator		RotatorVariable.ToString();										'P= Y= R='
+FLinearColor	LinearColorVariable.ToString();									'(R=,G=,B=,A=)'
+UObject			(InObj != NULL) ? InObj->GetName() : FString(TEXT("None"));
+
+#변환 2
+bool value = TestString.ToBool();
+	* true  반환 <  1, "True", "Yes", GTrue, GYes, 0 이 아닌 정수.
+	* false 반환 < 0, "False", "No", GFalse, GNo, 해석 할수 없는 값.
+
+int		value   = FCString::Atoi(*TestString);
+float	value	= FCString::Atof(*TestString);
+
+
+
+// FName
+//--------------------------------------------------------------
+	- FName은 문자열을 사용하기위한 매우 가벼운 시스템을 제공한다.
+	- 대/소문자를 구분하지 않으며 고유 한 문자열 테이블과 인스턴스 번호에 인덱스의 조합으로 저장한다.
+	- 해시 테이블을 사용하여 FName 변환에 빠른 문자열을 제공
+	- INVALID_NAME_CHARACTERS 유효하지 않은 문자열이 있으므로, 변환시 IsValidObjectName() 유효성 검사 필요.
+
+	float compareResult = TestFName.Compare(OtherFName);	// ==:0, OtherName 보다 작은 경우 음수값, 큰 경우 양수값
+
+FName name = FName(TEXT("Hello"));
+
+
+// FText
+//--------------------------------------------------------------
+	- Display 문자열
+	- 현지화 기능 내장되어 있음.
+	- 변환 함수를 제공하지 않으며, 표시되는 문자열에 변경을 가하는 것은 매우 불안전한 작업이기 때문이다.
+
+#변환
+	FText::AsNumber()
+	FText::AsPercent()
+	FText::AsCurrency()
+	FText::AsDate()
+	FText::AsTime()
+
+// 정의
+/* 파일 시작 */
+#define LOCTEXT_NAMESPACE "Your Namespace" 
+	...
+	FText TestHUDText = LOCTEXT("Your Key", "Your Text")
+	...
+#undef LOCTEXT_NAMESPACE 
+/* 파일 끝 */
+
+// 사용
+FText TestHUDText = NSLOCTEXT("Your Namespace", "Your Key", "Your Text")
+
+// UI 사용
+FFormatNamedArguments Arguments;
+Arguments.Add(TEXT("CurrentHealth"), FText::AsNumber(CurrentHealth));
+TextItem.Text = FText::Format(LOCTEXT("ExampleFText", "You currently have {CurrentHealth} health left."), Arguments);
+
+
+
+
+// 변환 예제
+//--------------------------------------------------------------
+
+FName > FString		: FString TestString = TestName.ToString();
+	* 무관.
+
+FText > FString		: FString TestString = TestText.ToString();
+	* 일부 언어에서는 변환시 손실될 위험.
+
+FString > FName		: FName	  TestName = FName(*TestString);
+	* 대문자와 소문자를 구별하지 않으므로 변환이 손실되므로 위험.
+
+FText > FName		: 지원안함. (우회:Text->FString->FName)
+	* 손실 변환 위험.
+
+FName > FText		: FText   TestText = FText::FromName(TestName);
+	* FName 의 내용이 FText 의 "자동 현지화" 혜택을 받지 못할 수 있음에 주의 필요.
+
+FString > FText		: FRext TestText = FText::FromString(TestString);
+	* FName 의 내용이 FText 의 "자동 현지화" 혜택을 받지 못할 수 있음에 주의 필요.

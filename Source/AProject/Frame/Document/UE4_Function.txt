@@ -1,0 +1,107 @@
+
+
+Actor/Component 접근
+----------------------------------------------------------
+
+// 포인터로 얻기
+TArray<UActorComponent*> children;
+MyActor->GetComponents(children);
+
+// 참조로 얻기
+TArray <UStaticMeshComponent> StaticComps; 
+MyActor->GetComponents<UStaticMeshComponent>(StaticComps);
+
+
+// Active
+MyActor->SetActorHiddenInGame(true);        // Hides visible components
+MyActor->SetActorEnableCollision(false);    // Disables collision components
+MyActor->SetActorTickEnabled(false);        // Stops the Actor from ticking
+
+// 액터 소멸
+MyActor->Destroy();         // 바로
+MyActor->SetLifeSpan(1);    // 1초 딜레이
+
+
+// 컴포넌트 얻기 (배열)
+TArray<UActorComponent*> StaticMeshComps;
+StaticMeshComps = MyActor->GetComponentsByClass(UStaticMeshComponent::StaticClass());
+
+
+// 컴포넌트 얻기 (배열, Tag)
+TArray<UActorComponent*> StaticMeshComps;
+StaticMeshComps = MyActor->GetComponentsByTag(UStaticMeshComponent::StaticClass(), TEXT("Damage"));
+
+
+// 컴포넌트에서 액터 접근
+AActor* ParentActor = MyComponent->GetOwner();
+
+
+// 액터에서 컴포넌트 접근
+UMyComponent* MyComp = MyActor->FindComponentByClass<UMyComponent>();
+
+
+액터 검색
+----------------------------------------------------------
+// 이름으로 액터 찾기 (UObject 에도 작동)
+AActor* MyActor = FindObject<AActor>(nullptr, TEXT("MyNamedActor"));
+
+// 유형으로 액터 찾기 (UWorld 오브젝트 필요)
+#include "EngineUtils.h"
+for (TActorIterator<AMyActor> It(GetWorld()); It; ++It)
+{
+    AMyActor* MyActor = *It;
+    // ...
+}
+
+// 유형으로 UObject 찾기
+#include "EngineUtils.h"
+for (TObjectIterator<UMyObject> It; It; ++it)
+{
+    UMyObject* MyObject = *It;
+    // ...
+}
+
+// 태그로 액터 찾기 (ActorComponent 에도 작동, 대신 TObjectIterator 사용)
+for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+{
+    AActor* Actor = *It;
+    if (Actor->ActorHasTag(FName(TEXT("Mytag"))))
+    {
+        // ...
+    }
+}
+
+
+// 액터 태그 설정.
+//  - 액터는 태그를 여럿 가질 수 있습니다
+MyActor.Tags.AddUnique(TEXT("MyTag"));
+
+
+// 컴포넌트 태그 설정.
+// - 자체 태그 배열이 있습니다
+MyComponent.ComponentTags.AddUnique(TEXT("MyTag"));
+
+// 액터에 이 태그가 있는지 검사
+if (MyActor->ActorHasTag(FName(TEXT("MyTag"))))
+{
+    // ...
+}
+
+// 컴포넌트에 이 태그가 있는지 검사
+if (MyComponent->ComponentHasTag(FName(TEXT("MyTag"))))
+{
+    // ...
+}
+
+
+함수 이해
+----------------------------------------------------------
+UClass::GetDefaultSubobjectByName()
+
+
+AActor::GetComponentByClass( UActorComponent::StaticClass() )
+	- components 배열을 검색하고 지정된 클래스의 첫 번째로 발견 된 구성 요소를 반환합니다.
+
+AActor::GetComponentsByTag( UActorComponent::StaticClass(), FName tag )
+	- 지정된 태그로 지정된 클래스를 상속하는 모든 컴퍼넌트를 가져옵니다.
+
